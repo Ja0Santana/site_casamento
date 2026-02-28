@@ -48,3 +48,10 @@ tasks.named('test') {
 bootJar {
 	mainClass = 'com.joaopaulo.Site_Casamento.SiteCasamentoApplication'
 }
+
+tasks.named('jar') {
+	enabled = false
+}
+
+bootJar {
+	archiveFileName = 'app.jar'
