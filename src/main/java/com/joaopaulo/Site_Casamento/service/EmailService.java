@@ -21,7 +21,7 @@ public class EmailService {
     @Value("${resend.api.key}")
     private String resendApiKey;
 
-    @Value("${resend.email.from}")
+    @Value("Elen e Joao Paulo<contato@casamentoelenejoaopaulo.men>")
     private String emailRemetente;
 
     private Resend resend;
