@@ -12,7 +12,7 @@ import java.util.Map;
 @RequestMapping("/v1/webhooks")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "https://casamentoelenejoaopaulo.men")
+@CrossOrigin(origins = "casamentoelenejoaopaulo.men")
 public class WebHookController {
 
     private final PagamentoService pagamentoService;
