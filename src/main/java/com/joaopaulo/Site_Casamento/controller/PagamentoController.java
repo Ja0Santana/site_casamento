@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/v1/pagamentos")
-@CrossOrigin(origins = "https://casamentoelenejoaopaulo.men")
 @RequiredArgsConstructor
 public class PagamentoController {
 
