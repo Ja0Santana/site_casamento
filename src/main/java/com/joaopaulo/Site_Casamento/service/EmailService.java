@@ -1,13 +1,11 @@
 package com.joaopaulo.Site_Casamento.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value; // Importante para ler do properties
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
@@ -18,63 +16,59 @@ import org.thymeleaf.context.Context;
 @Slf4j
 public class EmailService {
 
-    private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
 
-    // Injetamos o e-mail configurado no application.properties para evitar o erro de sintaxe
-    @Value("${spring.mail.username}")
+    @Value("${resend.api.key}")
+    private String resendApiKey;
+
+    @Value("${resend.email.from}")
     private String emailRemetente;
 
-    public void enviarEmail(String destinatario, String assunto, String mensagem) {
-        try {
-            log.info("Enviando email simples para: {}", destinatario);
-            SimpleMailMessage email = new SimpleMailMessage();
+    private Resend resend;
 
-            // Forçamos o remetente para evitar Pauli@Jão
-            email.setFrom(emailRemetente);
-            email.setTo(destinatario);
-            email.setSubject(assunto);
-            email.setText(mensagem);
-
-            javaMailSender.send(email);
-            log.info("Email enviado com sucesso para: {}", destinatario);
-        } catch (Exception e) {
-            log.error("Erro ao enviar email simples para: {}, erro: {}", destinatario, e.getMessage());
+    private Resend getResendClient() {
+        if (this.resend == null) {
+            this.resend = new Resend(resendApiKey);
         }
+        return this.resend;
     }
 
+    /**
+     * Envio de E-mail HTML utilizando o Resend SDK (API HTTP)
+     * Isso ignora o bloqueio de portas SMTP do Railway.
+     */
     public void enviarEmailHtml(String para, String assunto, Context context, String templateName) {
         try {
             log.info("Processando template HTML: {} para: {}", templateName, para);
 
+            // 1. Gera o HTML usando o Thymeleaf normalmente
             String corpoHtml = templateEngine.process(templateName, context);
-            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
 
-            // Usamos UTF-8 para garantir que acentos no corpo do e-mail funcionem
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            // 2. Obtém o cliente Resend (Lazy initialization)
+            Resend resendClient = getResendClient();
 
-            // RESOLUÇÃO DO ERRO 555:
-            // Define o remetente explicitamente. Isso substitui o MAIL FROM:<Pauli@Jão>
-            helper.setFrom(emailRemetente);
+            // 3. Monta a requisição de envio via API
+            CreateEmailOptions sendEmailRequest = CreateEmailOptions.builder()
+                    .from(emailRemetente)
+                    .to(para)
+                    .subject(assunto)
+                    .html(corpoHtml)
+                    .build();
 
-            helper.setTo(para);
-            helper.setSubject(assunto);
-            helper.setText(corpoHtml, true);
+            // 4. Envia
+            CreateEmailResponse response = resendClient.emails().send(sendEmailRequest);
+            log.info("Email enviado via Resend com sucesso! ID: {}", response.getId());
 
-            javaMailSender.send(mimeMessage);
-            log.info("Email HTML enviado com sucesso para: {}", para);
-
-        } catch (MessagingException e) {
-            log.error("Erro de protocolo/mensageria ao enviar e-mail: {}", e.getMessage());
-            throw new RuntimeException("Falha ao processar e enviar o e-mail HTML: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Erro inesperado no envio de e-mail: {}", e.getMessage());
-            throw new RuntimeException("Erro inesperado: " + e.getMessage());
+            log.error("Erro ao enviar e-mail via Resend para {}: {}", para, e.getMessage());
+            // Não lançamos RuntimeException para evitar que o erro de e-mail
+            // cancele o cadastro do convidado no banco de dados.
         }
     }
 
     @Async
     public void enviarEmailVerificacao(String para, String codigo) {
+        log.info("Iniciando envio assíncrono de verificação para: {}", para);
         Context context = new Context();
         context.setVariable("CODIGO_VERIFICACAO", codigo);
 
@@ -82,7 +76,25 @@ public class EmailService {
                 para,
                 "Verifique seu E-mail | João Paulo & Elen Aparecida",
                 context,
-                "verificacao-email" // <--- O nome deve ser idêntico ao arquivo .html
-        );
+                "verificacao-email");
+    }
+
+    /**
+     * Método simples para mensagens rápidas (Texto plano)
+     */
+    public void enviarEmailSimples(String destinatario, String assunto, String mensagem) {
+        try {
+            Resend resendClient = getResendClient();
+            CreateEmailOptions request = CreateEmailOptions.builder()
+                    .from(emailRemetente)
+                    .to(destinatario)
+                    .subject(assunto)
+                    .text(mensagem)
+                    .build();
+            resendClient.emails().send(request);
+            log.info("Email simples enviado com sucesso para: {}", destinatario);
+        } catch (Exception e) {
+            log.error("Erro no envio simples: {}", e.getMessage());
+        }
     }
 }
