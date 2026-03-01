@@ -103,7 +103,7 @@ public class PagamentoService {
         }
     }
 
-    @Scheduled(fixedDelay = 1800000)
+    @Scheduled(cron = "0 0 * * * *")
     public void verificarPagamentosPendentes() {
         List<Pagamento> pendentes = pagamentoRepository.findAllByStatusPagamento(StatusPagamento.PENDENTE);
         for (Pagamento p : pendentes) {

@@ -15,7 +15,7 @@ import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j // Adicione o log para monitorar o Railway
+@Slf4j
 public class CodigoVerificacaoService {
 
     private final CodigoVerificacaoRepository repository;
@@ -23,10 +23,8 @@ public class CodigoVerificacaoService {
 
     @Transactional
     public Map<String, String> gerarEnviarCodigo(String email) {
-        // Gerar código de 5 dígitos
         String codigo = String.format("%05d", new Random().nextInt(100000));
 
-        // Busca existente ou cria novo (Estratégia de Upsert)
         CodigoVerificacao cv = repository.findByEmail(email).orElse(new CodigoVerificacao());
         cv.setEmail(email);
         cv.setCodigo(codigo);
@@ -39,7 +37,6 @@ public class CodigoVerificacaoService {
             return Map.of("mensagem", "Código enviado com sucesso para " + email);
         } catch (Exception e) {
             log.error("Falha ao enviar e-mail de código: {}", e.getMessage());
-            // Opcional: deletar o código do banco se o envio falhar
             throw new RuntimeException("Falha ao enviar e-mail. Tente novamente em instantes.");
         }
     }
@@ -54,22 +51,19 @@ public class CodigoVerificacaoService {
 
         CodigoVerificacao cv = opt.get();
 
-        // Verifica expiração
         if (cv.getDataExpiracao().isBefore(LocalDateTime.now())) {
             repository.delete(cv);
             return Map.of("valido", false, "mensagem", "Código expirado.");
         }
-
-        // Verifica correspondência
         if (cv.getCodigo().equals(codigo)) {
-            repository.delete(cv); // Consome o código após o uso
+            repository.delete(cv);
             return Map.of("valido", true, "mensagem", "Sucesso!");
         }
 
         return Map.of("valido", false, "mensagem", "Código incorreto.");
     }
 
-    @Scheduled(cron = "0 0 * * * *") // Roda a cada hora
+    @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public void limparCodigosExpirados() {
         log.info("Executando limpeza de códigos expirados...");

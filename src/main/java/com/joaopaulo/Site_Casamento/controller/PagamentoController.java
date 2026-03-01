@@ -34,4 +34,10 @@ public class PagamentoController {
         pagamentoService.processarPagamentoCard(payload);
         return ResponseEntity.ok(Map.of("status", "success"));
     }
+
+    @GetMapping("/reprocessar-pendentes")
+    public ResponseEntity<Map<String, String>> reprocessar() {
+        pagamentoService.verificarPagamentosPendentes();
+        return ResponseEntity.ok(Map.of("message", "Processamento iniciado"));
+    }
 }
