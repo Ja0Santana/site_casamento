@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de E-mail | João Paulo & Elen Aparecida</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #fdf8f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+    <!-- Container principal -->
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+        style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; margin-top: 32px; margin-bottom: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+
+        <!-- Header decorativo -->
+        <tr>
+            <td style="background: linear-gradient(135deg, #d48c96, #e8b4b8); padding: 40px 32px; text-align: center;">
+                <p style="font-size: 40px; margin: 0 0 8px 0;">🛡️</p>
+                <h1 style="margin: 0; font-size: 26px; color: #ffffff; font-weight: 700; letter-spacing: 0.5px;">
+                    Verifique seu E-mail
+                </h1>
+                <p
+                    style="margin: 8px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.85); letter-spacing: 2px; text-transform: uppercase;">
+                    Segurança para seu presente
+                </p>
+            </td>
+        </tr>
+
+        <!-- Corpo do e-mail -->
+        <tr>
+            <td style="padding: 40px 32px 24px 32px;">
+
+                <!-- Saudação -->
+                <p style="font-size: 18px; color: #1e293b; margin: 0 0 24px 0; line-height: 1.6;">
+                    Olá! 💕
+                </p>
+
+                <!-- Mensagem principal -->
+                <p style="font-size: 15px; color: #475569; margin: 0 0 16px 0; line-height: 1.7;">
+                    Recebemos uma solicitação para prosseguir com um presente em nosso site.
+                    Para garantir a sua segurança, use o código abaixo:
+                </p>
+
+                <!-- Bloco do Código -->
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                    style="margin: 32px 0; background-color: #fdf2f4; border-radius: 12px; border: 2px dashed #d48c96;">
+                    <tr>
+                        <td style="padding: 32px; text-align: center;">
+                            <p
+                                style="margin: 0 0 12px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 3px; font-weight: 700;">
+                                Seu código de verificação
+                            </p>
+                            <div
+                                style="display: inline-block; padding: 12px 24px; background-color: #ffffff; border-radius: 8px; border: 1px solid #f1e5e8;">
+                                <span
+                                    style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; color: #d48c96; letter-spacing: 8px; margin: 0;"
+                                    th:text="${CODIGO_VERIFICACAO}">
+                                    123456
+                                </span>
+                            </div>
+                            <p style="margin: 16px 0 0 0; font-size: 13px; color: #64748b; font-style: italic;">
+                                Copie e cole este código na página de confirmação.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Aviso de Expiração -->
+                <p style="font-size: 13px; color: #94a3b8; margin: 24px 0; text-align: center; line-height: 1.5;">
+                    ⚠️ Este código é válido apenas para esta transação e expira em breve. <br>
+                    Se você não solicitou este código, pode ignorar este e-mail.
+                </p>
+            </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+            <td
+                style="padding: 24px 32px; background-color: #fdf8f6; text-align: center; border-top: 1px solid #f1e5e8;">
+                <p style="margin: 0; font-size: 11px; color: #94a3b8; line-height: 1.6;">
+                    João Paulo &amp; Elen Aparecida — 21 de Junho de 2026 <br>
+                    Este é um e-mail automático de segurança.
+                </p>
+            </td>
+        </tr>
+
+    </table>
+
+</body>
+
+</html>

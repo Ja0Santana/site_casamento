@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agradecimento pelo Presente</title>
+</head>
+
+<body
+        style="margin: 0; padding: 0; background-color: #fdf8f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+<!-- Container principal -->
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+       style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; margin-top: 32px; margin-bottom: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+
+    <!-- Header decorativo -->
+    <tr>
+        <td style="background: linear-gradient(135deg, #d48c96, #e8b4b8); padding: 40px 32px; text-align: center;">
+            <p style="font-size: 40px; margin: 0 0 8px 0;">💍</p>
+            <h1 style="margin: 0; font-size: 26px; color: #ffffff; font-weight: 700; letter-spacing: 0.5px;">
+                Obrigado pelo seu presente!
+            </h1>
+            <p
+                    style="margin: 8px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.85); letter-spacing: 2px; text-transform: uppercase;">
+                Com amor e gratidão
+            </p>
+        </td>
+    </tr>
+
+    <!-- Corpo do e-mail -->
+    <tr>
+        <td style="padding: 40px 32px 24px 32px;">
+
+            <!-- Saudação -->
+            <p style="font-size: 18px; color: #1e293b; margin: 0 0 24px 0; line-height: 1.6;">
+                Olá, <strong style="color: #d48c96;" th:text="${nomePresente}">Nome do Presenteador</strong>! 💕
+            </p>
+
+            <!-- Mensagem principal -->
+            <p style="font-size: 15px; color: #475569; margin: 0 0 16px 0; line-height: 1.7;">
+                Ficamos muito felizes e emocionados ao receber o seu presente.
+                Seu carinho e generosidade significam muito para nós nesse momento tão especial!
+            </p>
+
+            <!-- Destaque do presente -->
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                   style="margin: 24px 0; background-color: #fdf2f4; border-radius: 12px; border-left: 4px solid #d48c96;">
+                <tr>
+                    <td style="padding: 20px 24px;">
+                        <p
+                                style="margin: 0 0 4px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">
+                            Presente recebido
+                        </p>
+                        <p style="margin: 0; font-size: 17px; color: #1e293b; font-weight: 600;"
+                           th:text="${nomeProduto}">
+                            Nome do Produto
+                        </p>
+                        <p style="margin: 4px 0 0 0; font-size: 15px; color: #d48c96; font-weight: 700;"
+                           th:text="${valorProduto}">
+                            R$ 0,00
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Mensagem de carinho (se houver) -->
+            <div th:if="${mensagemCarinho != null and !mensagemCarinho.isEmpty()}">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                       style="margin: 16px 0 24px 0; background-color: #f8fafc; border-radius: 12px;">
+                    <tr>
+                        <td style="padding: 20px 24px;">
+                            <p
+                                    style="margin: 0 0 8px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">
+                                💌 Sua mensagem
+                            </p>
+                            <p style="margin: 0; font-size: 14px; color: #64748b; font-style: italic; line-height: 1.6;"
+                               th:text="${mensagemCarinho}">
+                                Mensagem de carinho do presenteador...
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Dados do evento -->
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                   style="margin: 24px 0; background: linear-gradient(135deg, #fdf2f4, #fef9f8); border-radius: 12px; border: 1px solid #f3d5d9;">
+                <tr>
+                    <td style="padding: 24px; text-align: center;">
+                        <p
+                                style="margin: 0 0 4px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">
+                            Contamos com você
+                        </p>
+                        <p style="margin: 0; font-size: 18px; color: #1e293b; font-weight: 700;"
+                           th:text="${dataEvento}">
+                            21 de Junho de 2026
+                        </p>
+                        <p style="margin: 6px 0 0 0; font-size: 14px; color: #64748b;" th:text="${localEvento}">
+                            Igreja Matriz de Nossa Senhora do Patrocínio
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Despedida -->
+            <p style="font-size: 15px; color: #475569; margin: 24px 0 8px 0; line-height: 1.7;">
+                Com todo o nosso amor e carinho,
+            </p>
+            <p style="font-size: 18px; color: #d48c96; margin: 0; font-weight: 700;">
+                João Paulo &amp; Elen Aparecida 💕
+            </p>
+        </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+        <td
+                style="padding: 24px 32px; background-color: #fdf8f6; text-align: center; border-top: 1px solid #f1e5e8;">
+            <p style="margin: 0; font-size: 11px; color: #94a3b8; line-height: 1.6;">
+                Este e-mail foi enviado automaticamente. <br>
+                Você recebeu porque nos presentou através do nosso site.
+            </p>
+        </td>
+    </tr>
+
+</table>
+
+</body>
+
+</html>

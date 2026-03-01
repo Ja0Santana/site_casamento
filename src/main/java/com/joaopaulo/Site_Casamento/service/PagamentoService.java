@@ -12,9 +12,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -80,6 +83,7 @@ public class PagamentoService {
         return pagamentoMapper.toResponseDTO(pagamento, qrCode, qrCodeBase64);
     }
 
+    @Transactional
     public void atualizarStatusPagamento(Long mercadoPagoId, Map<String, Object> payload) {
         Pagamento pagamento = pagamentoRepository.findByMercadoPagoId(mercadoPagoId)
                 .orElseThrow(() -> new NullDataException("Pagamento ID " + mercadoPagoId + " não encontrado"));
@@ -96,6 +100,17 @@ public class PagamentoService {
 
         if (novoStatus == StatusPagamento.APROVADO) {
             notificacaoService.enviarNotificacoesSucesso(pagamento);
+        }
+    }
+
+    @Scheduled(fixedDelay = 1800000)
+    public void verificarPagamentosPendentes() {
+        List<Pagamento> pendentes = pagamentoRepository.findAllByStatusPagamento(StatusPagamento.PENDENTE);
+        for (Pagamento p : pendentes) {
+            try {
+                this.atualizarStatusPagamento(p.getMercadoPagoId(), null);
+            } catch (Exception ignored) {
+            }
         }
     }
 
