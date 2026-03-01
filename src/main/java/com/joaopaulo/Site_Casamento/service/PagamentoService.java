@@ -159,4 +159,26 @@ public class PagamentoService {
         }
         return publicKey;
     }
+
+    public void receberNotificacao(Map<String, Object> payload) {
+        log.info("Webhook recebido: type={}, action={}", payload.get("type"), payload.get("action"));
+
+        String type = (String) payload.get("type");
+
+        if (!"payment".equals(type)) {
+            log.warn("Notificação recebida para tipo não suportado: {}", type);
+            return;
+        }
+
+        Map<String, Object> data = (Map<String, Object>) payload.get("data");
+
+        if (data != null && data.get("id") != null) {
+            try {
+                Long mpId = Long.valueOf(data.get("id").toString());
+                this.atualizarStatusPagamento(mpId, payload);
+            } catch (Exception e) {
+                log.error("Erro ao processar ID {}: {}", data.get("id"), e.getMessage());
+            }
+        }
+    }
 }

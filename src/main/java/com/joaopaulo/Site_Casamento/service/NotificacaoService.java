@@ -19,7 +19,6 @@ public class NotificacaoService {
     private String emailCasal;
 
     private final EmailService emailService;
-    private final PagamentoService pagamentoService;
 
     @Async
     public void enviarNotificacoesSucesso(Pagamento pagamento) {
@@ -31,8 +30,7 @@ public class NotificacaoService {
                 pagamento.getEmail(),
                 "Obrigado pelo seu presente! 💕",
                 ctxConvidado,
-                "agradecimento-presente"
-        );
+                "agradecimento-presente");
 
         // --- 2. CONFIGURAÇÃO PARA O CASAL (Notificação) ---
         Context ctxCasal = getContext(pagamento, valorFormatado);
@@ -41,8 +39,7 @@ public class NotificacaoService {
                 emailCasal,
                 "Vocês receberam um presente! 🎁",
                 ctxCasal,
-                "notificacao-presente"
-        );
+                "notificacao-presente");
     }
 
     private static Context getContext(Pagamento pagamento, String valorFormatado) {
@@ -55,26 +52,5 @@ public class NotificacaoService {
         ctxConvidadoOuCasal.setVariable("nomesCasal", "Nome & Nome");
         ctxConvidadoOuCasal.setVariable("mensagemCarinho", ""); // Se não tiver no banco, mande vazio
         return ctxConvidadoOuCasal;
-    }
-
-    public void receberNotificacao(Map<String, Object> payload) {
-        log.info("Webhook recebido: type={}, action={}", payload.get("type"), payload.get("action"));
-
-        String type = (String) payload.get("type");
-
-        if (!"payment".equals(type)) {
-            log.warn("Pagamento inválido!");
-        }
-
-        Map<String, Object> data = (Map<String, Object>) payload.get("data");
-
-        if (data != null && data.get("id") != null) {
-            try {
-                Long mpId = Long.valueOf(data.get("id").toString());
-                pagamentoService.atualizarStatusPagamento(mpId, payload);
-            } catch (Exception e) {
-                log.error("Erro ao processar ID {}: {}", data.get("id"), e.getMessage());
-            }
-        }
     }
 }
