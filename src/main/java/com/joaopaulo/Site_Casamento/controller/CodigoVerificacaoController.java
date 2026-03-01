@@ -10,7 +10,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/v1/validacao")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "casamentoelenejoaopaulo.men")
+@CrossOrigin(origins = "*")
 public class CodigoVerificacaoController {
 
     private final CodigoVerificacaoService codigoVerificacaoService;
