@@ -2,7 +2,6 @@ package com.joaopaulo.Site_Casamento.service;
 
 import com.joaopaulo.Site_Casamento.model.CodigoVerificacao;
 import com.joaopaulo.Site_Casamento.repository.CodigoVerificacaoRepository;
-import com.joaopaulo.Site_Casamento.service.EmailService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

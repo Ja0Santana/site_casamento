@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.joaopaulo.Site_Casamento.dto.in.PagamentoRequestDTO;
 import com.joaopaulo.Site_Casamento.dto.out.PagamentoResponseDTO;
 import com.joaopaulo.Site_Casamento.enums.StatusPagamento;
-import com.joaopaulo.Site_Casamento.esceptions.NullDataException;
+import com.joaopaulo.Site_Casamento.exceptions.NullDataException;
 import com.joaopaulo.Site_Casamento.mapper.PagamentoMapper;
 import com.joaopaulo.Site_Casamento.model.Pagamento;
 import com.joaopaulo.Site_Casamento.repository.PagamentoRepository;
