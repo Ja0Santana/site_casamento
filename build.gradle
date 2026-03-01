@@ -8,11 +8,8 @@ group = 'com.joaopaulo'
 version = '0.0.1-SNAPSHOT'
 description = 'Demo project for Spring Boot'
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
+sourceCompatibility = '17'
+targetCompatibility = '17'
 
 configurations {
 	compileOnly {
