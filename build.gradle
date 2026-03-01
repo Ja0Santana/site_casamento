@@ -36,8 +36,6 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-	implementation 'software.amazon.awssdk:ses:2.20.0'
-	implementation 'com.resend:resend-java:1.1.0'
 }
 
 tasks.named('test') {
