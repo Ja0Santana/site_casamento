@@ -2,19 +2,25 @@ package com.joaopaulo.Site_Casamento.service;
 
 import com.joaopaulo.Site_Casamento.model.Pagamento;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificacaoService {
 
     @Value("${EMAIL_CASAL:paulo.jp806@gmail.com}")
     private String emailCasal;
 
     private final EmailService emailService;
+    private final PagamentoService pagamentoService;
 
     @Async
     public void enviarNotificacoesSucesso(Pagamento pagamento) {
@@ -50,5 +56,26 @@ public class NotificacaoService {
         ctxConvidadoOuCasal.setVariable("nomesCasal", "Nome & Nome");
         ctxConvidadoOuCasal.setVariable("mensagemCarinho", ""); // Se não tiver no banco, mande vazio
         return ctxConvidadoOuCasal;
+    }
+
+    public void receberNotificacao(Map<String, Object> payload) {
+        log.info("Webhook recebido: type={}, action={}", payload.get("type"), payload.get("action"));
+
+        String type = (String) payload.get("type");
+
+        if (!"payment".equals(type)) {
+            log.warn("Pagamento inválido!");
+        }
+
+        Map<String, Object> data = (Map<String, Object>) payload.get("data");
+
+        if (data != null && data.get("id") != null) {
+            try {
+                Long mpId = Long.valueOf(data.get("id").toString());
+                pagamentoService.atualizarStatusPagamento(mpId, payload);
+            } catch (Exception e) {
+                log.error("Erro ao processar ID {}: {}", data.get("id"), e.getMessage());
+            }
+        }
     }
 }

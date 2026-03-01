@@ -34,4 +34,14 @@ out/
 /.nb-gradle/
 
 ### VS Code ###
-.vscode/
+
+### Sensitive Files ###
+.env
+local.properties
+application_temp.txt
+properties_read.txt
+properties_check.txt
+build.log
+build_error.txt
+build_error_utf8.txt
+properties_temp.txt

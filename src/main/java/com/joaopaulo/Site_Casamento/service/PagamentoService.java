@@ -1,9 +1,10 @@
 package com.joaopaulo.Site_Casamento.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.joaopaulo.Site_Casamento.enums.StatusPagamento;
 import com.joaopaulo.Site_Casamento.dto.in.PagamentoRequestDTO;
 import com.joaopaulo.Site_Casamento.dto.out.PagamentoResponseDTO;
+import com.joaopaulo.Site_Casamento.enums.StatusPagamento;
+import com.joaopaulo.Site_Casamento.esceptions.NullDataException;
 import com.joaopaulo.Site_Casamento.mapper.PagamentoMapper;
 import com.joaopaulo.Site_Casamento.model.Pagamento;
 import com.joaopaulo.Site_Casamento.repository.PagamentoRepository;
@@ -15,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,13 +26,15 @@ public class PagamentoService {
     private final RestClient restClient;
     private final PagamentoRepository pagamentoRepository;
     private final PagamentoMapper pagamentoMapper;
-    private final NotificacaoService notificacaoService; // SRP: Delegamos a notificação
+    private final NotificacaoService notificacaoService;
 
     @Value("${mercadopago.public-key}")
     private String publicKey;
 
     public PagamentoResponseDTO criarPagamentoPix(PagamentoRequestDTO dto) {
-        // Agora usamos o dto.descricao() que você adicionou
+        if (dto == null)
+            throw new NullDataException("Dados de pagamento não podem ser nulos");
+
         Map<String, Object> requestBody = Map.of(
                 "transaction_amount", dto.valor(),
                 "description", "Presente: " + dto.descricao(),
@@ -45,31 +47,29 @@ public class PagamentoService {
                 .body(requestBody)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
-                    byte[] body = res.getBody().readAllBytes();
-                    log.error("Erro MP ao criar: {}", new String(body));
+                    log.error("Erro MP ao criar Pix");
                     throw new RuntimeException("Erro ao processar pagamento no Mercado Pago");
                 })
                 .body(JsonNode.class);
 
-        if (response == null) {
+        if (response == null)
             throw new RuntimeException("Resposta nula do Mercado Pago");
-        }
 
         Long mpId = response.get("id").asLong();
         String statusStr = response.get("status").asText();
-        String qrCode = response.get("point_of_interaction").get("transaction_data").get("qr_code").asText();
-        String qrCodeBase64 = response.get("point_of_interaction").get("transaction_data").get("qr_code_base64")
-                .asText();
+        JsonNode txData = response.get("point_of_interaction").get("transaction_data");
+
+        String qrCode = txData.get("qr_code").asText();
+        String qrCodeBase64 = txData.get("qr_code_base64").asText();
         String dataCriacao = response.get("date_created").asText();
 
-        // Salvando com a descrição vinda do DTO
         Pagamento pagamento = Pagamento.builder()
                 .mercadoPagoId(mpId)
                 .valor(dto.valor())
                 .statusPagamento(StatusPagamento.fromString(statusStr))
                 .email(dto.email())
                 .nome(dto.nome())
-                .descricao(dto.descricao()) // IMPORTANTE: Salvar para usar no e-mail depois
+                .descricao(dto.descricao())
                 .qrCode(qrCode)
                 .dataPagamento(dataCriacao)
                 .build();
@@ -81,39 +81,31 @@ public class PagamentoService {
     }
 
     public void atualizarStatusPagamento(Long mercadoPagoId, Map<String, Object> payload) {
-        Optional<Pagamento> pagamentoOpt = pagamentoRepository.findByMercadoPagoId(mercadoPagoId);
+        Pagamento pagamento = pagamentoRepository.findByMercadoPagoId(mercadoPagoId)
+                .orElseThrow(() -> new NullDataException("Pagamento ID " + mercadoPagoId + " não encontrado"));
 
-        if (pagamentoOpt.isEmpty()) {
-            log.warn("Pagamento com ID MP {} não encontrado para atualização", mercadoPagoId);
-            return;
-        }
-
-        Pagamento pagamento = pagamentoOpt.get();
         String statusStr = obterStatusMercadoPago(mercadoPagoId, payload);
         StatusPagamento novoStatus = StatusPagamento.fromString(statusStr);
 
-        // Lógica de transição de status
-        if (pagamento.getStatusPagamento() != novoStatus) {
-            pagamento.setStatusPagamento(novoStatus);
-            pagamentoRepository.save(pagamento);
-            log.info("Pagamento {} atualizado para {}", mercadoPagoId, novoStatus);
+        if (pagamento.getStatusPagamento() == novoStatus)
+            return;
 
-            // REGRA DE OURO: Notificar apenas na aprovação
-            if (novoStatus == StatusPagamento.APROVADO) {
-                log.info("Disparando e-mails de confirmação para o ID {}", mercadoPagoId);
-                notificacaoService.enviarNotificacoesSucesso(pagamento);
-            }
+        pagamento.setStatusPagamento(novoStatus);
+        pagamentoRepository.save(pagamento);
+        log.info("Pagamento {} atualizado para {}", mercadoPagoId, novoStatus);
+
+        if (novoStatus == StatusPagamento.APROVADO) {
+            notificacaoService.enviarNotificacoesSucesso(pagamento);
         }
     }
 
     public void processarPagamentoCard(Map<String, Object> payload) {
-        log.info("Processando pagamento via Cartão: {}", payload);
+        if (payload == null || !payload.containsKey("siteData")) {
+            throw new NullDataException("Payload de cartão inválido ou sem dados do site");
+        }
 
-        // Extraímos os dados do site que enviamos no Objeto 'siteData' no JS
-        Map<String, Object> siteData = (Map<String, Object>) payload.get("siteData");
-
-        // Removemos o siteData do payload para enviar o restante para o MP
-        payload.remove("siteData");
+        log.info("Processando pagamento via Cartão...");
+        Map<String, Object> siteData = (Map<String, Object>) payload.remove("siteData");
 
         JsonNode response = restClient.post()
                 .uri("/v1/payments")
@@ -121,44 +113,41 @@ public class PagamentoService {
                 .body(payload)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
-                    byte[] body = res.getBody().readAllBytes();
-                    log.error("Erro MP ao criar cartão: {}", new String(body));
+                    log.error("Erro MP ao criar pagamento de cartão");
                     throw new RuntimeException("Erro ao processar pagamento de cartão no Mercado Pago");
                 })
                 .body(JsonNode.class);
 
-        if (response != null && response.has("id")) {
-            Long mpId = response.get("id").asLong();
-            String statusMP = response.get("status").asText();
+        if (response == null || !response.has("id")) {
+            throw new RuntimeException("Falha na criação do pagamento via cartão no Mercado Pago");
+        }
 
-            // Salvamos o pagamento com os dados que vieram do site
-            Pagamento pagamento = Pagamento.builder()
-                    .mercadoPagoId(mpId)
-                    .valor(new java.math.BigDecimal(siteData.get("valor").toString()))
-                    .email(siteData.get("email").toString())
-                    .nome(siteData.get("nome").toString())
-                    .descricao(siteData.get("descricao").toString())
-                    .statusPagamento(StatusPagamento.fromString(statusMP))
-                    .dataPagamento(response.get("date_created").asText())
-                    .build();
+        Pagamento pagamento = Pagamento.builder()
+                .mercadoPagoId(response.get("id").asLong())
+                .valor(new java.math.BigDecimal(siteData.get("valor").toString()))
+                .email(siteData.get("email").toString())
+                .nome(siteData.get("nome").toString())
+                .descricao(siteData.get("descricao").toString())
+                .statusPagamento(StatusPagamento.fromString(response.get("status").asText()))
+                .dataPagamento(response.get("date_created").asText())
+                .build();
 
-            pagamentoRepository.save(pagamento);
+        pagamentoRepository.save(pagamento);
 
-            // Se for aprovado agora, já notifica
-            if (pagamento.getStatusPagamento() == StatusPagamento.APROVADO) {
-                notificacaoService.enviarNotificacoesSucesso(pagamento);
-            }
+        if (pagamento.getStatusPagamento() == StatusPagamento.APROVADO) {
+            notificacaoService.enviarNotificacoesSucesso(pagamento);
         }
     }
 
     private String obterStatusMercadoPago(Long mercadoPagoId, Map<String, Object> payload) {
-        if (payload.containsKey("status") && payload.get("status") != null) {
-            return payload.get("status").toString();
-        }
+        log.info("Consultando status oficial para o pagamento: {}", mercadoPagoId);
 
         JsonNode response = restClient.get()
                 .uri("/v1/payments/" + mercadoPagoId)
                 .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+                    log.error("Erro ao consultar status oficial do pagamento {}", mercadoPagoId);
+                })
                 .body(JsonNode.class);
 
         return (response != null && response.has("status")) ? response.get("status").asText() : "pending";
@@ -166,10 +155,8 @@ public class PagamentoService {
 
     public String obterPublicKey() {
         if (publicKey == null || publicKey.isBlank()) {
-            log.error("Configuração Crítica: mercado-pago.public-key não encontrada no application.properties");
-            throw new IllegalStateException("Chave pública do Mercado Pago não configurada.");
+            throw new NullDataException("Configuração Crítica: key não encontrada");
         }
-        log.info("Enviando chave pública do Mercado Pago para o frontend");
         return publicKey;
     }
 }

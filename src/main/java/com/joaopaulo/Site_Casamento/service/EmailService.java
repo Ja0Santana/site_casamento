@@ -58,11 +58,8 @@ public class EmailService {
             // 4. Envia
             CreateEmailResponse response = resendClient.emails().send(sendEmailRequest);
             log.info("Email enviado via Resend com sucesso! ID: {}", response.getId());
-
         } catch (Exception e) {
             log.error("Erro ao enviar e-mail via Resend para {}: {}", para, e.getMessage());
-            // Não lançamos RuntimeException para evitar que o erro de e-mail
-            // cancele o cadastro do convidado no banco de dados.
         }
     }
 
@@ -77,24 +74,5 @@ public class EmailService {
                 "Verifique seu E-mail | João Paulo & Elen Aparecida",
                 context,
                 "verificacao-email");
-    }
-
-    /**
-     * Método simples para mensagens rápidas (Texto plano)
-     */
-    public void enviarEmailSimples(String destinatario, String assunto, String mensagem) {
-        try {
-            Resend resendClient = getResendClient();
-            CreateEmailOptions request = CreateEmailOptions.builder()
-                    .from(emailRemetente)
-                    .to(destinatario)
-                    .subject(assunto)
-                    .text(mensagem)
-                    .build();
-            resendClient.emails().send(request);
-            log.info("Email simples enviado com sucesso para: {}", destinatario);
-        } catch (Exception e) {
-            log.error("Erro no envio simples: {}", e.getMessage());
-        }
     }
 }
