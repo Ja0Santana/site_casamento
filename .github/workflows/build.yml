@@ -1,0 +1,36 @@
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build with Gradle
+      # Passamos variáveis vazias/'fake' apenas para que o contexto do Spring carregue no teste
+      # E usamos -x test caso os testes tentem conectar ao Postgres real
+      run: ./gradlew build -x test
+      env:
+        MERCADO_PAGO_ACCESS_TOKEN: "dummy_value"
+        MP_PUBLIC_KEY: "dummy_value"
+        SPRING_DATASOURCE_URL: "jdbc:postgresql://localhost:5432/dummy"
+        SPRING_DATASOURCE_USERNAME: "dummy"
+        SPRING_DATASOURCE_PASSWORD: "dummy"
+        RESEND_API_KEY: "dummy_value"
+        EMAIL_CASAL: "dummy@dummy.com"
