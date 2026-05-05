@@ -35,8 +35,8 @@ public class PagamentoService {
     private String publicKey;
 
     public PagamentoResponseDTO criarPagamentoPix(PagamentoRequestDTO dto) {
-        if (dto == null)
-            throw new NullDataException("Dados de pagamento não podem ser nulos");
+        if (dto.valor().compareTo(new java.math.BigDecimal("10.00")) < 0)
+            throw new RuntimeException("O valor mínimo para presente é de R$ 10,00");
 
         Map<String, Object> requestBody = Map.of(
                 "transaction_amount", dto.valor(),
