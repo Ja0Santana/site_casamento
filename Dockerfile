@@ -8,6 +8,7 @@ RUN gradle bootJar --no-daemon
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/build/libs/app.jar app.jar
+RUN mkdir -p build/libs && cp app.jar build/libs/app.jar
 
 EXPOSE 8080
 
