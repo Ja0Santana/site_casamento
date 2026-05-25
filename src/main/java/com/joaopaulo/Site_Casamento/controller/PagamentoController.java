@@ -2,6 +2,7 @@ package com.joaopaulo.Site_Casamento.controller;
 
 import com.joaopaulo.Site_Casamento.dto.in.PagamentoRequestDTO;
 import com.joaopaulo.Site_Casamento.dto.out.PagamentoResponseDTO;
+import com.joaopaulo.Site_Casamento.enums.StatusPagamento;
 import com.joaopaulo.Site_Casamento.service.PagamentoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,5 +40,11 @@ public class PagamentoController {
     public ResponseEntity<Map<String, String>> reprocessar() {
         pagamentoService.verificarPagamentosPendentes();
         return ResponseEntity.ok(Map.of("message", "Processamento iniciado"));
+    }
+
+    @GetMapping("/{id}/status")
+    public ResponseEntity<Map<String, String>> buscarStatus(@PathVariable("id") Long id) {
+        StatusPagamento status = pagamentoService.buscarStatusPorMercadoPagoId(id);
+        return ResponseEntity.ok(Map.of("status", status.name()));
     }
 }
