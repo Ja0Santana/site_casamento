@@ -175,6 +175,13 @@ public class PagamentoService {
         return publicKey;
     }
 
+    public StatusPagamento buscarStatusPorMercadoPagoId(Long mercadoPagoId) {
+        return pagamentoRepository.findByMercadoPagoId(mercadoPagoId)
+                .map(Pagamento::getStatusPagamento)
+                .orElseThrow(() -> new NullDataException("Pagamento ID " + mercadoPagoId + " não encontrado"));
+    }
+
+
     public void receberNotificacao(Map<String, Object> payload) {
         log.info("Webhook recebido: type={}, action={}", payload.get("type"), payload.get("action"));
 
