@@ -34,19 +34,40 @@ public class PagamentoService {
     @Value("${mercadopago.public-key}")
     private String publicKey;
 
+    @Value("${app.base-url:https://sitecasamento-production.up.railway.app}")
+    private String appBaseUrl;
+
     public PagamentoResponseDTO criarPagamentoPix(PagamentoRequestDTO dto) {
         if (dto.valor().compareTo(new java.math.BigDecimal("10.00")) < 0)
             throw new RuntimeException("O valor mínimo para presente é de R$ 10,00");
+
+        Map<String, String> nomes = extrairNomeSobrenome(dto.nome());
 
         Map<String, Object> requestBody = Map.of(
                 "transaction_amount", dto.valor(),
                 "description", "Presente: " + dto.descricao(),
                 "payment_method_id", "pix",
-                "payer", Map.of("email", dto.email()));
+                "notification_url", appBaseUrl + "/v1/webhooks/mercado-pago",
+                "external_reference", UUID.randomUUID().toString(),
+                "payer", Map.of(
+                        "email", dto.email(),
+                        "first_name", nomes.get("first_name"),
+                        "last_name", nomes.get("last_name")
+                ),
+                "additional_info", Map.of(
+                        "items", List.of(Map.of(
+                                "title", "Presente: " + dto.descricao(),
+                                "description", "Presente para a lista de casamento",
+                                "quantity", 1,
+                                "unit_price", dto.valor()
+                        ))
+                )
+        );
 
         JsonNode response = restClient.post()
                 .uri("/v1/payments")
                 .header("X-Idempotency-Key", UUID.randomUUID().toString())
+                .header("X-Melinet-SRC", "sdk-js-v2")
                 .body(requestBody)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
@@ -122,10 +143,39 @@ public class PagamentoService {
         log.info("Processando pagamento via Cartão...");
         Map<String, Object> siteData = (Map<String, Object>) payload.remove("siteData");
 
+        Map<String, Object> requestBody = new java.util.HashMap<>(payload);
+
+        String fullNome = siteData.get("nome").toString();
+        Map<String, String> nomes = extrairNomeSobrenome(fullNome);
+
+        Map<String, Object> payer = (Map<String, Object>) requestBody.get("payer");
+        Map<String, Object> newPayer = new java.util.HashMap<>();
+        if (payer != null) {
+            newPayer.putAll(payer);
+        }
+        newPayer.put("email", siteData.get("email").toString());
+        newPayer.put("first_name", nomes.get("first_name"));
+        newPayer.put("last_name", nomes.get("last_name"));
+        requestBody.put("payer", newPayer);
+
+        Map<String, Object> additionalInfo = new java.util.HashMap<>();
+        additionalInfo.put("items", List.of(Map.of(
+                "title", "Presente: " + siteData.get("descricao").toString(),
+                "description", "Presente para a lista de casamento",
+                "quantity", 1,
+                "unit_price", new java.math.BigDecimal(siteData.get("valor").toString())
+        )));
+        requestBody.put("additional_info", additionalInfo);
+
+        requestBody.put("notification_url", appBaseUrl + "/v1/webhooks/mercado-pago");
+        requestBody.put("external_reference", UUID.randomUUID().toString());
+        requestBody.put("statement_descriptor", "CasamentoElenJP");
+
         JsonNode response = restClient.post()
                 .uri("/v1/payments")
                 .header("X-Idempotency-Key", UUID.randomUUID().toString())
-                .body(payload)
+                .header("X-Melinet-SRC", "sdk-js-v2")
+                .body(requestBody)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
                     log.error("Erro MP ao criar pagamento de cartão");
@@ -202,5 +252,17 @@ public class PagamentoService {
                 log.error("Erro ao processar ID {}: {}", data.get("id"), e.getMessage());
             }
         }
+    }
+
+    private Map<String, String> extrairNomeSobrenome(String nomeCompleto) {
+        String nome = nomeCompleto != null ? nomeCompleto.trim() : "";
+        String firstName = nome;
+        String lastName = "Silva";
+        int lastSpace = nome.lastIndexOf(" ");
+        if (lastSpace > 0) {
+            firstName = nome.substring(0, lastSpace);
+            lastName = nome.substring(lastSpace + 1);
+        }
+        return Map.of("first_name", firstName, "last_name", lastName);
     }
 }
